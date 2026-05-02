@@ -79,9 +79,9 @@ func main() {
 	datasetFile := "datasets/dataset_depth2_vars1_1.csv"
 	conf := ga.DefaultConfig()
 	conf.PopulationSize = 200
-	conf.Generations = 300
+	conf.Generations = 500
 
-	conf.MaxLossRaw = 0.05
+	conf.MaxLossRaw = -1 //0.05 //-1 means, the max loss is guessed from the initial population
 	conf.MaxComplexity = 10.0
 	conf.MinComplexityWeight = 0.1
 	conf.MaxComplexityWeight = 0.2
@@ -193,7 +193,7 @@ func main() {
 }
 */
 
-func runGeneticAlgorithm(datasetFile string, conf ga.Config, run_verbose int) (float64, int, *ga.Individual, *symbolic.Tree, *symbolic.Tree, []ga.HistoryEntry) {
+func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int) (float64, int, *ga.Individual, *symbolic.Tree, *symbolic.Tree, []ga.HistoryEntry) {
 	f, err := os.Open(datasetFile)
 	if err != nil {
 		fmt.Println("Error opening dataset:", err)

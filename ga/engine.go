@@ -3,6 +3,7 @@ package ga
 import (
 	"fmt"
 	"marvin/symbreggenalgo/symbolic"
+	"math"
 	"sort"
 	"sync"
 
@@ -17,7 +18,7 @@ type HistoryEntry struct {
 }
 
 // Run the core Symbolic Regression execution loop.
-func Run(data Dataset, conf Config, alpha *Alphabet, verbose int) (int, *Individual, *symbolic.Tree, []HistoryEntry, [][10]int) {
+func Run(data Dataset, conf *Config, alpha *Alphabet, verbose int) (generations_taken_for_optimal int, bestOverall *Individual, bestOverallTree *symbolic.Tree, history []HistoryEntry, complexityMeasures [][10]int) {
 	// 1. Initialization
 	pop := make(Population, conf.PopulationSize)
 	var initWg sync.WaitGroup
@@ -47,9 +48,34 @@ func Run(data Dataset, conf Config, alpha *Alphabet, verbose int) (int, *Individ
 		fmt.Println(tabw.Render() + "\n")
 	}
 
-	var bestOverall *Individual
-	var history []HistoryEntry
-	complexityMeasures := make([][10]int, 0, conf.Generations) // track complexity distributions for each generation for analysis
+	if conf.MaxLossRaw < 0 {
+		fmt.Printf("Guessing max loss from initial population...\n")
+		// TODO: Guess the max Loss from a larger population if population is small
+		var wg sync.WaitGroup
+		for _, ind := range pop {
+			wg.Add(1)
+			go func(individual *Individual) {
+				defer wg.Done()
+				EvaluateLossRaw(individual, data, conf)
+			}(ind)
+		}
+		wg.Wait()
+		conf.MaxLossRaw = math.MaxFloat64
+		found := false
+		for _, ind := range pop {
+			if ind.LossRaw < conf.MaxLossRaw {
+				conf.MaxLossRaw = ind.LossRaw
+				found = true
+			}
+		}
+		if !found {
+			fmt.Printf("ERROR: could not estimate MaxLossRaw from initial Population, no finite LossRaw found.\nTry to increase the population size.")
+			return
+		}
+		fmt.Printf("Estimated MaxLossRaw=%0.4e from initial Population.\n", conf.MaxLossRaw)
+	}
+
+	complexityMeasures = make([][10]int, 0, conf.Generations) // track complexity distributions for each generation for analysis
 
 	// 2. Main Generations Loop
 	for generation := 0; generation < conf.Generations; generation++ {
@@ -170,7 +196,7 @@ func Run(data Dataset, conf Config, alpha *Alphabet, verbose int) (int, *Individ
 
 		pop = newPop
 	}
-	generations_taken_for_optimal := -1
+	generations_taken_for_optimal = -1
 	if len(history) > 0 {
 		generations_taken_for_optimal = history[len(history)-1].Generation
 	}
@@ -181,5 +207,5 @@ func Run(data Dataset, conf Config, alpha *Alphabet, verbose int) (int, *Individ
 	if verbose >= 1 {
 		fmt.Printf("Best solution found in generation %d with Loss = %g, Expression = %s\n", generations_taken_for_optimal, bestOverall.LossFinal, bestOverallTree.String())
 	}
-	return generations_taken_for_optimal, bestOverall, bestOverallTree, history, complexityMeasures
+	return
 }

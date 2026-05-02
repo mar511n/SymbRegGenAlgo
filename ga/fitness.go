@@ -13,7 +13,7 @@ type DataPoint struct {
 
 type Dataset []DataPoint
 
-func EvaluateLoss(ind *Individual, data Dataset, conf Config, time float64) {
+func EvaluateLoss(ind *Individual, data Dataset, conf *Config, time float64) {
 	EvaluateLossRaw(ind, data, conf)
 	EvaluateComplexity(ind, conf)
 	ind.LossRaw = ind.LossRaw / conf.MaxLossRaw
@@ -41,7 +41,7 @@ func EvaluateLoss(ind *Individual, data Dataset, conf Config, time float64) {
 	}
 }
 
-func EvaluateLossRaw(ind *Individual, data Dataset, conf Config) {
+func EvaluateLossRaw(ind *Individual, data Dataset, conf *Config) {
 	mse := 0.0
 	for _, dp := range data {
 		val, err := EvaluatePostfix(ind.Tree, dp.Variables)
@@ -77,7 +77,7 @@ func EvaluateLossRaw(ind *Individual, data Dataset, conf Config) {
 	}
 }
 
-func EvaluateComplexity(ind *Individual, conf Config) {
+func EvaluateComplexity(ind *Individual, conf *Config) {
 	ind.Complexity = float64(len(ind.Tree))
 }
 

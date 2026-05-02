@@ -18,19 +18,19 @@ type Config struct {
 	MaxDepth            int              // Maximum depth of an initialized tree
 	CrossoverRate       float64          // Probability of crossover
 	MutationRate        float64          // Probability of mutation
-	MaxLossRaw          float64          // Estimated maximum expected raw loss for normalization
+	MaxLossRaw          float64          // Estimated maximum expected raw loss for normalization if negative, guess from initial population
 	MaxComplexity       float64          // Estimated maximum expected complexity for normalization
 	MinComplexityWeight float64          // Weight at t=0 for complexity in the combined loss [0,1]
 	MaxComplexityWeight float64          // Weight at t=1 for complexity in the combined loss [0,1]
 	UsedSelection       SelectionMethod  // Method for selecting individuals for reproduction
-	SelectionParams     interface{}      // Parameters for the selected selection method
+	SelectionParams     any              // Parameters for the selected selection method
 	ElitismCount        int              // Number of best individuals to carry over automatically
 	Params              *GeneratorParams // Parameters for tree generation (e.g., operator probabilities)
 }
 
 // DefaultConfig provides a reasonable starting point.
-func DefaultConfig() Config {
-	return Config{
+func DefaultConfig() *Config {
+	return &Config{
 		PopulationSize:      400,
 		Generations:         600,
 		MaxDepth:            2,
