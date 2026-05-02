@@ -245,7 +245,7 @@ func runGeneticAlgorithm(datasetFile string, conf ga.Config, run_verbose int) (f
 
 	generationsTaken, bestIndividual, bestTree, history, complexityMeasures := ga.Run(dataset, conf, alphabet, run_verbose)
 
-	writer, err := gonpy.NewFileWriter("complexityMeasures.npy")
+	writer, err := gonpy.NewFileWriter("notebooks/complexityMeasures.npy")
 	if err != nil {
 		fmt.Println("Error creating numpy file:", err)
 	}
