@@ -27,6 +27,30 @@ type Token struct {
 // Postfix represents a mathematical expression tree in Reverse Polish Notation (from bottom-up).
 type Postfix []Token
 
+func (p Postfix) TokenDiff(other Postfix) (d float64) {
+	d = 0
+	smallP := p
+	largerP := other
+	if len(other) < len(p) {
+		smallP = other
+		largerP = p
+	}
+
+	// calculate number of tokens present in smallP but not in largerP
+	tokenCount := make(map[Token]int)
+	for _, token := range largerP {
+		tokenCount[token]++
+	}
+	for _, token := range smallP {
+		if tokenCount[token] > 0 {
+			tokenCount[token]--
+		} else {
+			d += 1
+		}
+	}
+	return
+}
+
 // ToTree builds a tree from the postfix array using a standard stack approach.
 func (p Postfix) ToTree() (*Tree, error) {
 	if len(p) == 0 {

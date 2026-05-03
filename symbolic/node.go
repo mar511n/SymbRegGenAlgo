@@ -49,7 +49,7 @@ func nodeToString(n Node) string {
 	case *InputNode:
 		return node.Name
 	case *ConstantNode:
-		return fmt.Sprintf("%g", node.Value)
+		return fmt.Sprintf("%0.2e", node.Value)
 	case *UnaryNode:
 		return fmt.Sprintf("%s(%s)", node.Op.String(), nodeToString(node.Input))
 	case *BinaryNode:

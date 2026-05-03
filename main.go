@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/kshedden/gonpy"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -76,22 +75,31 @@ func median(slice []float64) float64 {
 
 func main() {
 	//generateAllDatasets()
-	datasetFile := "datasets/dataset_depth2_vars1_1.csv"
+	datasetFile := "data/datasets/dataset_depth2_vars2_2.csv"
 	conf := ga.DefaultConfig()
-	conf.PopulationSize = 200
-	conf.Generations = 500
+	conf.PopulationSize = 100
+	conf.Generations = 1000
+
+	conf.CompatibilityThreshold = 0.41
 
 	conf.MaxLossRaw = -1 //0.05 //-1 means, the max loss is guessed from the initial population
-	conf.MaxComplexity = 10.0
-	conf.MinComplexityWeight = 0.1
+	conf.MaxComplexity = 7
+	conf.MinComplexityWeight = 0.05
 	conf.MaxComplexityWeight = 0.2
 
-	conf.UsedSelection = ga.WeightedLoss
-	conf.MutationRate = 0.8
+	conf.UsedSelection = ga.Tournament
+	conf.SelectionParams = 3
+	conf.InterSpeciesMatingRate = 0.8
+	conf.MutationRate = 0.9
 	conf.CrossoverRate = 0.7
-	conf.ElitismCount = 5
-	//conf.SelectionParams = 4
-	runGeneticAlgorithm(datasetFile, conf, 1)
+	conf.GlobalElitismCount = 4
+	conf.SpeciesElites = 1
+	conf.TopElites = 1
+
+	_, history := runGeneticAlgorithm(datasetFile, conf, 2, 100)
+
+	// Save history to JSON file
+	ga.ExportHistoryToJSON(history, "data/results/evolution_history.json")
 }
 
 /* func parameter_sweep_penalty_size() {
@@ -193,11 +201,11 @@ func main() {
 }
 */
 
-func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int) (float64, int, *ga.Individual, *symbolic.Tree, *symbolic.Tree, []ga.HistoryEntry) {
+func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int, num_hist_dumps int) (score float64, history *ga.EvolutionHistory) {
 	f, err := os.Open(datasetFile)
 	if err != nil {
 		fmt.Println("Error opening dataset:", err)
-		return 0, 0, nil, nil, nil, nil
+		return
 	}
 	defer f.Close()
 
@@ -205,12 +213,12 @@ func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int) (
 	records, err := reader.ReadAll()
 	if err != nil {
 		fmt.Println("Error reading dataset:", err)
-		return 0, 0, nil, nil, nil, nil
+		return
 	}
 
 	if len(records) < 2 {
 		fmt.Println("Dataset is empty or has no data rows")
-		return 0, 0, nil, nil, nil, nil
+		return
 	}
 
 	header := records[0]
@@ -218,12 +226,12 @@ func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int) (
 	targetPostfix, err := symbolic.ParsePostfix(header[0])
 	if err != nil {
 		fmt.Printf("Error parsing header expression: %v\n", err)
-		return 0, 0, nil, nil, nil, nil
+		return
 	}
 	targetTree, err := targetPostfix.ToTree()
 	if err != nil {
 		fmt.Printf("Error converting header postfix to tree: %v\n", err)
-		return 0, 0, nil, nil, nil, nil
+		return
 	}
 
 	var dataset ga.Dataset
@@ -242,35 +250,18 @@ func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int) (
 	}
 
 	alphabet := ga.DefaultAlphabet(varNames)
-
-	generationsTaken, bestIndividual, bestTree, history, complexityMeasures := ga.Run(dataset, conf, alphabet, run_verbose)
-
-	writer, err := gonpy.NewFileWriter("notebooks/complexityMeasures.npy")
-	if err != nil {
-		fmt.Println("Error creating numpy file:", err)
-	}
-	writer.Shape = []int{len(complexityMeasures), 10}
-	data := make([]int32, 0, len(complexityMeasures)*10)
-	for i := range complexityMeasures {
-		for j := 0; j < 10; j++ {
-			data = append(data, int32(complexityMeasures[i][j]))
-		}
-	}
-	err = writer.WriteInt32(data)
-	if err != nil {
-		fmt.Println("Error writing to numpy file:", err)
-	}
+	history = ga.Run(dataset, conf, alphabet, run_verbose, num_hist_dumps)
 
 	targetIndividual := &ga.Individual{Tree: targetPostfix}
-	ga.EvaluateLoss(targetIndividual, dataset, conf, 1.0)
-	score := targetIndividual.LossFinal / bestIndividual.LossFinal
+	ga.EvaluateLoss(targetIndividual, dataset, conf, 1.0, 1)
+	score = targetIndividual.LossFinal / history.BestOverall.LossFinal
 
 	tabw := table.NewWriter()
 	tabw.SetTitle("Evolution Results")
 	tabw.AppendHeader(table.Row{"Type", "LossRaw", "Complexity", "LossInst", "LossFinal", "Expression"})
-	tabw.AppendRow(table.Row{"Target", targetIndividual.LossRaw, targetIndividual.Complexity, targetIndividual.LossInst, targetIndividual.LossFinal, targetTree.String()})
-	tabw.AppendRow(table.Row{"Best", bestIndividual.LossRaw, bestIndividual.Complexity, bestIndividual.LossInst, bestIndividual.LossFinal, bestTree.String()})
+	tabw.AppendRow(table.Row{"Target", fmt.Sprintf("%0.3e", targetIndividual.LossRaw), fmt.Sprintf("%0.3e", targetIndividual.Complexity), fmt.Sprintf("%0.3e", targetIndividual.LossInst), fmt.Sprintf("%0.3e", targetIndividual.LossFinal), targetTree.String()})
+	tabw.AppendRow(table.Row{"Best", fmt.Sprintf("%0.3e", history.BestOverall.LossRaw), fmt.Sprintf("%0.3e", history.BestOverall.Complexity), fmt.Sprintf("%0.3e", history.BestOverall.LossInst), fmt.Sprintf("%0.3e", history.BestOverall.LossFinal), history.BestOverallTree.String()})
 	tabw.SetCaption("Score (Target Loss / Best Loss) = %0.4f", score)
 	fmt.Println(tabw.Render())
-	return score, generationsTaken, bestIndividual, bestTree, targetTree, history
+	return
 }

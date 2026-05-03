@@ -19,14 +19,14 @@ type GeneratorParams struct {
 // DefaultGeneratorParams provides default generation probabilities.
 func DefaultGeneratorParams() *GeneratorParams {
 	return &GeneratorParams{
-		EarlyTerminationProb: 0.15,
+		EarlyTerminationProb: 0.2,
 		BinaryProb:           0.50,
-		ConstantProb:         0.50,
+		ConstantProb:         0.60,
 		ConstantGenerator:    nil,
 		BinaryOpWeights:      make(map[symbolic.BinaryOp]float64),
 		UnaryOpWeights:       make(map[symbolic.UnaryOp]float64),
-		PointMutationProb:    0.33,
-		SubtreeMutationProb:  0.33,
+		PointMutationProb:    0.3,
+		SubtreeMutationProb:  0.3,
 	}
 }
 

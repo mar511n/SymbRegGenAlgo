@@ -8,7 +8,7 @@ func LossWeightedSelection(pop Population) *Individual {
 		return nil
 	}
 	candidate := pop[rnd.Intn(len(pop))]
-	for range len(pop) / 10 {
+	for range len(pop) {
 		p := 1.0 - math.Exp(-candidate.LossInst/0.42)
 		if rnd.Float64() < 1.0-p {
 			return candidate

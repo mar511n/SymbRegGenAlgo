@@ -122,22 +122,22 @@ func GenerateRandomDatasets(numDatasets int, numPoints int, maxDepth int, numVar
 
 func generateAllDatasets() {
 	fmt.Println("Generating datasets...")
-	max_depths := []int{2, 3, 4, 5}
-	num_variables := []int{1, 2, 3}
+	max_depths := []int{2, 3}
+	num_variables := []int{1, 2}
 	for _, depth := range max_depths {
 		for _, vars := range num_variables {
 			genparams := ga.DefaultGeneratorParams()
 			err := GenerateRandomDatasets(
-				10,         // number of datasets per configuration
-				100,        // number of data points per dataset
-				depth,      // maximum depth of the generated expression tree
-				vars,       // number of variables
-				"datasets", // output directory
+				20,              // number of datasets per configuration
+				100,             // number of data points per dataset
+				depth,           // maximum depth of the generated expression tree
+				vars,            // number of variables
+				"data/datasets", // output directory
 				fmt.Sprintf("dataset_depth%d_vars%d", depth, vars), // filename prefix
 				genparams, // GeneratorParams with default settings
 				-10.0,     // min constant value
 				10.0,      // max constant value
-				0.1,       // 10% noise
+				0.01,      // 10% noise
 			)
 			if err != nil {
 				fmt.Println("Error:", err)
