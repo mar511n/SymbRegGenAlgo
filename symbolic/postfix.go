@@ -27,6 +27,20 @@ type Token struct {
 // Postfix represents a mathematical expression tree in Reverse Polish Notation (from bottom-up).
 type Postfix []Token
 
+func (p Postfix) ContainedVariables() []string {
+	vars := make(map[string]bool)
+	for _, token := range p {
+		if token.Type == TokenTypeVariable {
+			vars[token.Name] = true
+		}
+	}
+	varList := make([]string, 0, len(vars))
+	for v := range vars {
+		varList = append(varList, v)
+	}
+	return varList
+}
+
 func (p Postfix) TokenDiff(other Postfix) (d float64) {
 	d = 0
 	smallP := p

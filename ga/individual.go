@@ -66,6 +66,10 @@ func (ind *Individual) Evaluate(data Dataset) {
 	}
 }
 
+func (ind *Individual) GetPredictions() []float64 {
+	return ind.predictions
+}
+
 // calculate the similarity or distance between two individuals based on their tree structure alone
 func (ind *Individual) DistanceTo(other *Individual, conf *Config) (d float64) {
 	// d = c1 * (tree depth difference) + c2 * (size difference) + c3 * (number of different tokens)

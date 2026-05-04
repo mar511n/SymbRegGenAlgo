@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"image/color"
 	"marvin/symbreggenalgo/ga"
 	"marvin/symbreggenalgo/symbolic"
 	"math"
@@ -10,6 +11,10 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/schollz/progressbar/v3"
@@ -77,10 +82,10 @@ func main() {
 	//generateAllDatasets()
 	datasetFile := "data/datasets/dataset_depth2_vars2_2.csv"
 	conf := ga.DefaultConfig()
-	conf.PopulationSize = 100
-	conf.Generations = 1000
+	conf.PopulationSize = 500
+	conf.Generations = 200
 
-	conf.CompatibilityThreshold = 0.41
+	conf.CompatibilityThreshold = 0.403
 
 	conf.MaxLossRaw = -1 //0.05 //-1 means, the max loss is guessed from the initial population
 	conf.MaxComplexity = 7
@@ -96,10 +101,72 @@ func main() {
 	conf.SpeciesElites = 1
 	conf.TopElites = 1
 
-	_, history := runGeneticAlgorithm(datasetFile, conf, 2, 100)
+	_, target, data, history := runGeneticAlgorithm(datasetFile, conf, 2, 100)
 
 	// Save history to JSON file
 	ga.ExportHistoryToJSON(history, "data/results/evolution_history.json")
+
+	// create plot of best expression together with data and target expression
+	history.BestOverall.Evaluate(data)
+	best_predictions := history.BestOverall.GetPredictions()
+	target.Evaluate(data)
+	target_predictions := target.GetPredictions()
+	b_vars := history.BestOverall.Tree.ContainedVariables()
+	t_vars := target.Tree.ContainedVariables()
+	if len(b_vars) > 1 || len(t_vars) > 1 {
+		fmt.Printf("Can only plot expressions with one variable...\n")
+	} else {
+		x := make([]float64, len(data))
+		y := make([]float64, len(data))
+		for i, dp := range data {
+			x[i] = dp.Variables[b_vars[0]]
+			y[i] = dp.Target
+		}
+
+		type SortPoint struct {
+			x, y, best, target float64
+		}
+		spts := make([]SortPoint, len(data))
+		for i := range x {
+			spts[i] = SortPoint{x: x[i], y: y[i], best: best_predictions[i], target: target_predictions[i]}
+		}
+		sort.Slice(spts, func(i, j int) bool { return spts[i].x < spts[j].x })
+
+		pts := make(plotter.XYs, len(x))
+		bestPts := make(plotter.XYs, len(x))
+		targetPts := make(plotter.XYs, len(x))
+		for i, sp := range spts {
+			pts[i].X, pts[i].Y = sp.x, sp.y
+			bestPts[i].X, bestPts[i].Y = sp.x, sp.best
+			targetPts[i].X, targetPts[i].Y = sp.x, sp.target
+		}
+
+		p := plot.New()
+		p.Title.Text = "Symbolic Regression Results"
+		p.X.Label.Text = "x"
+		p.Y.Label.Text = "y"
+
+		scatter, _ := plotter.NewScatter(pts)
+		p.Add(scatter)
+
+		bestLine, _ := plotter.NewLine(bestPts)
+		bestLine.LineStyle.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255}
+		p.Add(bestLine)
+
+		targetLine, _ := plotter.NewLine(targetPts)
+		targetLine.LineStyle.Color = color.RGBA{R: 0, G: 0, B: 255, A: 255}
+		p.Add(targetLine)
+
+		p.Legend.Add("Data", scatter)
+		p.Legend.Add("Best", bestLine)
+		p.Legend.Add("Target", targetLine)
+
+		err := p.Save(10*vg.Inch, 8*vg.Inch, "data/results/predictions.svg")
+		if err != nil {
+			fmt.Println("Error saving plot:", err)
+		}
+	}
+
 }
 
 /* func parameter_sweep_penalty_size() {
@@ -201,7 +268,7 @@ func main() {
 }
 */
 
-func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int, num_hist_dumps int) (score float64, history *ga.EvolutionHistory) {
+func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int, num_hist_dumps int) (score float64, targetIndividual *ga.Individual, dataset ga.Dataset, history *ga.EvolutionHistory) {
 	f, err := os.Open(datasetFile)
 	if err != nil {
 		fmt.Println("Error opening dataset:", err)
@@ -234,7 +301,6 @@ func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int, n
 		return
 	}
 
-	var dataset ga.Dataset
 	for i := 1; i < len(records); i++ {
 		row := records[i]
 		target, _ := strconv.ParseFloat(row[0], 64)
@@ -252,7 +318,7 @@ func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int, n
 	alphabet := ga.DefaultAlphabet(varNames)
 	history = ga.Run(dataset, conf, alphabet, run_verbose, num_hist_dumps)
 
-	targetIndividual := &ga.Individual{Tree: targetPostfix}
+	targetIndividual = &ga.Individual{Tree: targetPostfix}
 	ga.EvaluateLoss(targetIndividual, dataset, conf, 1.0, 1)
 	score = targetIndividual.LossFinal / history.BestOverall.LossFinal
 

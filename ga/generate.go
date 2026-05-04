@@ -14,6 +14,7 @@ type GeneratorParams struct {
 	UnaryOpWeights       map[symbolic.UnaryOp]float64
 	PointMutationProb    float64
 	SubtreeMutationProb  float64
+	GrowMutationProb     float64
 }
 
 // DefaultGeneratorParams provides default generation probabilities.
@@ -26,7 +27,8 @@ func DefaultGeneratorParams() *GeneratorParams {
 		BinaryOpWeights:      make(map[symbolic.BinaryOp]float64),
 		UnaryOpWeights:       make(map[symbolic.UnaryOp]float64),
 		PointMutationProb:    0.3,
-		SubtreeMutationProb:  0.3,
+		SubtreeMutationProb:  0.2,
+		GrowMutationProb:     0.2,
 	}
 }
 

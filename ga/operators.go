@@ -57,7 +57,7 @@ func Mutate(ind *Individual, alpha *Alphabet, maxDepth int, params *GeneratorPar
 
 	randVal := rnd.Float64()
 	if randVal < params.PointMutationProb {
-		// Point Mutation
+		// Point Mutation (randomly change an operator, variable, or constant)
 		idx := rnd.Intn(len(ind.Tree))
 		token := &ind.Tree[idx]
 		switch token.Type {
@@ -77,7 +77,7 @@ func Mutate(ind *Individual, alpha *Alphabet, maxDepth int, params *GeneratorPar
 			}
 		}
 	} else if randVal < params.PointMutationProb+params.SubtreeMutationProb {
-		// Subtree Mutation
+		// Subtree Mutation (randomly replace a subtree with a new randomly generated subtree)
 		cut := rnd.Intn(len(ind.Tree))
 		start := FindSubtreeBounds(ind.Tree, cut)
 
@@ -88,6 +88,9 @@ func Mutate(ind *Individual, alpha *Alphabet, maxDepth int, params *GeneratorPar
 		newTree = append(newTree, ind.Tree[cut+1:]...)
 
 		ind.Tree = newTree
+	} else if randVal < params.PointMutationProb+params.SubtreeMutationProb+params.GrowMutationProb {
+		// Grow Mutation (insert a new randomly generated subtree at a random point in the tree)
+		// TODO: check tree/postfix generation,mutation,crossover and implement this here.
 	} else {
 		// Shrink Mutation
 		// Replaces a randomly selected subtree with a randomly generated terminal (depth 0)
