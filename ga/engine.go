@@ -11,7 +11,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
-// TODO: benchmark & parallelize
+// TODO: benchmark
 // Run the core Symbolic Regression execution loop.
 func Run(data Dataset, conf *Config, alpha *Alphabet, verbose int, target_num_history_events int) (history *EvolutionHistory) {
 	history_dump_step := conf.Generations / target_num_history_events

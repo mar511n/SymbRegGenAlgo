@@ -103,7 +103,6 @@ func main() {
 
 	conf.MaxDepth = 1
 
-	// TODO: there is a bug, where equal!? (0.00e+00 or NaN) individuals are not grouped into the same species. Check distance measure and species assignment.
 	_, target, data, history := runGeneticAlgorithm(datasetFile, conf, 2, 100)
 
 	// Save history to JSON file
