@@ -1,10 +1,48 @@
 package symbolic
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type Node interface {
 	Evaluate() float64
 	NumChildren() int
+}
+
+func removeNaNInf(n Node) Node {
+	if n == nil {
+		return nil
+	}
+	// check if current node is a binary node.
+	// If so, check if either child is ConstantNode with NaN or Inf value.
+	// If both are NaN or Inf, returns a ConstantNode with value 0.
+	// If only one is NaN or Inf, returns the other child.
+	// If no children are NaN or Inf, check both children and return self.
+	switch node := n.(type) {
+	case *BinaryNode:
+		leftConst, leftIsConst := node.Left.(*ConstantNode)
+		rightConst, rightIsConst := node.Right.(*ConstantNode)
+		leftNaNInf := leftIsConst && isNaNOrInf(leftConst.Value)
+		rightNaNInf := rightIsConst && isNaNOrInf(rightConst.Value)
+
+		if leftNaNInf && rightNaNInf {
+			return &ConstantNode{Value: 0}
+		} else if leftNaNInf {
+			return removeNaNInf(node.Right)
+		} else if rightNaNInf {
+			return removeNaNInf(node.Left)
+		}
+		node.Left = removeNaNInf(node.Left)
+		node.Right = removeNaNInf(node.Right)
+	case *UnaryNode:
+		node.Input = removeNaNInf(node.Input)
+	}
+	return n
+}
+
+func isNaNOrInf(val float64) bool {
+	return math.IsNaN(val) || math.IsInf(val, 0)
 }
 
 func countNodes(n Node) int {
@@ -89,6 +127,58 @@ func Simplify(n Node) Node {
 		_, rightIsConst := node.Right.(*ConstantNode)
 		if leftIsConst && rightIsConst {
 			return &ConstantNode{Value: node.Evaluate()}
+		}
+		_, leftIsVar := node.Left.(*InputNode)
+		_, rightIsVar := node.Right.(*InputNode)
+		// list of possible simplifications
+		/*
+			x + 0 = x, 0 + x = x
+			x - 0 = x
+			x * 1 = x, 1 * x = x
+			x / 1 = x
+			x * 0 = 0, 0 * x = 0
+			0 / x = 0
+			x / x = 1
+			x - x = 0
+		*/
+		switch node.Op {
+		case Add:
+			if leftIsConst && node.Left.(*ConstantNode).Value == 0 {
+				return node.Right
+			}
+			if rightIsConst && node.Right.(*ConstantNode).Value == 0 {
+				return node.Left
+			}
+		case Sub:
+			if rightIsConst && node.Right.(*ConstantNode).Value == 0 {
+				return node.Left
+			}
+			if leftIsVar && rightIsVar && node.Left.(*InputNode).Name == node.Right.(*InputNode).Name {
+				return &ConstantNode{Value: 0}
+			}
+		case Mul:
+			if leftIsConst && node.Left.(*ConstantNode).Value == 1 {
+				return node.Right
+			}
+			if rightIsConst && node.Right.(*ConstantNode).Value == 1 {
+				return node.Left
+			}
+			if leftIsConst && node.Left.(*ConstantNode).Value == 0 {
+				return &ConstantNode{Value: 0}
+			}
+			if rightIsConst && node.Right.(*ConstantNode).Value == 0 {
+				return &ConstantNode{Value: 0}
+			}
+		case Div:
+			if rightIsConst && node.Right.(*ConstantNode).Value == 1 {
+				return node.Left
+			}
+			if leftIsConst && node.Left.(*ConstantNode).Value == 0 {
+				return &ConstantNode{Value: 0}
+			}
+			if leftIsVar && rightIsVar && node.Left.(*InputNode).Name == node.Right.(*InputNode).Name {
+				return &ConstantNode{Value: 1}
+			}
 		}
 	}
 

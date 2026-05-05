@@ -104,6 +104,12 @@ type Tree struct {
 	Root Node
 }
 
+func (t *Tree) RemoveNaNInf() {
+	if t != nil && t.Root != nil {
+		t.Root = removeNaNInf(t.Root)
+	}
+}
+
 func (t *Tree) Evaluate() float64 {
 	return t.Root.Evaluate()
 }
@@ -111,6 +117,7 @@ func (t *Tree) Evaluate() float64 {
 func (t *Tree) Simplify() {
 	if t != nil && t.Root != nil {
 		t.Root = Simplify(t.Root)
+		t.Root = removeNaNInf(t.Root)
 	}
 }
 

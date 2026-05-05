@@ -82,25 +82,28 @@ func main() {
 	//generateAllDatasets()
 	datasetFile := "data/datasets/dataset_depth2_vars2_2.csv"
 	conf := ga.DefaultConfig()
-	conf.PopulationSize = 500
-	conf.Generations = 200
+	conf.PopulationSize = 200
+	conf.Generations = 300
 
-	conf.CompatibilityThreshold = 0.403
+	conf.CompatibilityThreshold = 0.505
 
 	conf.MaxLossRaw = -1 //0.05 //-1 means, the max loss is guessed from the initial population
-	conf.MaxComplexity = 7
+	conf.MaxComplexity = 10
 	conf.MinComplexityWeight = 0.05
-	conf.MaxComplexityWeight = 0.2
+	conf.MaxComplexityWeight = 0.05
 
 	conf.UsedSelection = ga.Tournament
-	conf.SelectionParams = 3
-	conf.InterSpeciesMatingRate = 0.8
-	conf.MutationRate = 0.9
-	conf.CrossoverRate = 0.7
-	conf.GlobalElitismCount = 4
-	conf.SpeciesElites = 1
+	conf.SelectionParams = 2
+	conf.InterSpeciesMatingRate = 0.7
+	conf.MutationRate = 0.7
+	conf.CrossoverRate = 0.5
+	conf.GlobalElitismCount = 11
+	conf.SpeciesElites = 2
 	conf.TopElites = 1
 
+	conf.MaxDepth = 1
+
+	// TODO: there is a bug, where equal!? (0.00e+00 or NaN) individuals are not grouped into the same species. Check distance measure and species assignment.
 	_, target, data, history := runGeneticAlgorithm(datasetFile, conf, 2, 100)
 
 	// Save history to JSON file
@@ -168,105 +171,6 @@ func main() {
 	}
 
 }
-
-/* func parameter_sweep_penalty_size() {
-	// Run the GA on a specific dataset
-	datasetFile := "datasets/dataset_depth2_vars1_4.csv"
-	// Number of runs per penalty size
-	N := 20
-
-	// Target expression for reference
-	testcfg := ga.DefaultConfig()
-	testcfg.Generations = 1
-	testcfg.PopulationSize = 1
-	_, _, _, _, target_tree, _ := runGeneticAlgorithm(datasetFile, testcfg, false, 0)
-	fmt.Printf("Target expression: %s\n", target_tree.String())
-
-	// Scanned penalty sizes
-	min_ps := 0.1
-	max_ps := 4.0
-	num_ps := 10
-	penalty_size := make([]float64, 0, num_ps)
-	for i := range num_ps {
-		penalty_size = append(penalty_size, min_ps+float64(i)*(max_ps-min_ps)/float64(num_ps-1))
-	}
-
-	score_distributions := make([][]float64, len(penalty_size))
-	expression_size_distributions := make([][]int32, len(penalty_size))
-	for i, ps := range penalty_size {
-		scores := make([]float64, 0, N)
-		expression_sizes := make([]int32, 0, N)
-		bar := GetProgressBar(N)
-		bestLoss := math.Inf(1)
-		bestTree := &symbolic.Tree{}
-
-		for range N {
-			conf := ga.DefaultConfig()
-			conf.PenaltySize = ps
-			score, _, individual, tree, _, _ := runGeneticAlgorithm(datasetFile, conf, false, 0)
-			if individual.Loss < bestLoss {
-				bestLoss = individual.Loss
-				bestTree = tree
-			}
-			scores = append(scores, score)
-			expression_sizes = append(expression_sizes, int32(len(individual.Tree)))
-			bar.Add(1)
-		}
-
-		fmt.Printf("(%v/%v) Penalty size: %0.2f, Score: min=%0.2f, max=%0.2f, mean=%0.2f, median=%0.2f, Fit: %0.2f, Expr: %s\n", i+1, len(penalty_size), ps, min(scores), max(scores), mean(scores), median(scores), bestLoss, bestTree.String())
-
-		score_distributions[i] = scores
-		expression_size_distributions[i] = expression_sizes
-	}
-
-	writer, err := gonpy.NewFileWriter("penalty_sizes.npy")
-	if err != nil {
-		fmt.Println("Error creating numpy file:", err)
-		return
-	}
-	writer.Shape = []int{len(penalty_size)}
-	err = writer.WriteFloat64(penalty_size)
-	if err != nil {
-		fmt.Println("Error writing to numpy file:", err)
-		return
-	}
-	fmt.Printf("Saved penalty sizes to penalty_sizes.npy\n")
-
-	writer, err = gonpy.NewFileWriter("penalty_size_scores.npy")
-	if err != nil {
-		fmt.Println("Error creating numpy file:", err)
-		return
-	}
-	writer.Shape = []int{len(penalty_size), N}
-	data := make([]float64, 0, len(penalty_size)*N)
-	for i := range penalty_size {
-		data = append(data, score_distributions[i]...)
-	}
-	err = writer.WriteFloat64(data)
-	if err != nil {
-		fmt.Println("Error writing to numpy file:", err)
-		return
-	}
-	fmt.Printf("Saved score distributions to penalty_size_scores.npy\n")
-
-	writer, err = gonpy.NewFileWriter("penalty_size_expression_sizes.npy")
-	if err != nil {
-		fmt.Println("Error creating numpy file:", err)
-		return
-	}
-	writer.Shape = []int{len(penalty_size), N}
-	exprData := make([]int32, 0, len(penalty_size)*N)
-	for i := range penalty_size {
-		exprData = append(exprData, expression_size_distributions[i]...)
-	}
-	err = writer.WriteInt32(exprData)
-	if err != nil {
-		fmt.Println("Error writing to numpy file:", err)
-		return
-	}
-	fmt.Printf("Saved expression size distributions to penalty_size_expression_sizes.npy\n")
-}
-*/
 
 func runGeneticAlgorithm(datasetFile string, conf *ga.Config, run_verbose int, num_hist_dumps int) (score float64, targetIndividual *ga.Individual, dataset ga.Dataset, history *ga.EvolutionHistory) {
 	f, err := os.Open(datasetFile)

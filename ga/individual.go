@@ -72,15 +72,13 @@ func (ind *Individual) GetPredictions() []float64 {
 
 // calculate the similarity or distance between two individuals based on their tree structure alone
 func (ind *Individual) DistanceTo(other *Individual, conf *Config) (d float64) {
-	// d = c1 * (tree depth difference) + c2 * (size difference) + c3 * (number of different tokens)
+	if !ind.IsValid(conf.MaxValidLossRaw) && !other.IsValid(conf.MaxValidLossRaw) {
+		return 0.0 // Both are invalid, consider them identical in terms of distance
+	}
+	if !ind.IsValid(conf.MaxValidLossRaw) || !other.IsValid(conf.MaxValidLossRaw) {
+		return math.MaxFloat64 // One is valid and the other is not, consider them maximally distant
+	}
 	d = 0
-	t1, _ := ind.Tree.ToTree()
-	t2, _ := other.Tree.ToTree()
-	d1 := t1.Depth()
-	d2 := t2.Depth()
-	ddiff := math.Abs(float64(d1 - d2))
-	ddiff /= float64(max(d1, d2))
-	d += conf.DifferenceMeasure.TreeDepthWeight * ddiff
 	l1 := len(ind.Tree)
 	l2 := len(other.Tree)
 	ldiff := math.Abs(float64(l1 - l2))

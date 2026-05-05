@@ -12,16 +12,14 @@ const (
 )
 
 type DifferenceMeasureConfig struct {
-	TreeDepthWeight float64
 	TreeSizeWeight  float64
 	TokenDiffWeight float64
 }
 
 func DefaultDifferenceMeasureConfig() DifferenceMeasureConfig {
 	return DifferenceMeasureConfig{
-		TreeDepthWeight: 0.2,
-		TreeSizeWeight:  0.4,
-		TokenDiffWeight: 0.4,
+		TreeSizeWeight:  0.5,
+		TokenDiffWeight: 0.5,
 	}
 }
 

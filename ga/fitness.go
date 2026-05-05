@@ -19,7 +19,7 @@ func EvaluateLoss(ind *Individual, data Dataset, conf *Config, time float64, rel
 	ind.LossRaw = ind.LossRaw / conf.MaxLossRaw
 	ind.Complexity = (ind.Complexity - 1) / (conf.MaxComplexity - 1)
 	if ind.Complexity > 1 {
-		ind.Complexity = math.Exp(ind.Complexity - 1)
+		ind.Complexity = math.Exp(1.15 * (ind.Complexity - 1))
 	}
 	if math.IsNaN(ind.LossRaw) || math.IsInf(ind.LossRaw, 0) {
 		ind.LossRaw = math.MaxFloat64

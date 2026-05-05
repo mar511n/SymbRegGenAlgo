@@ -5,6 +5,7 @@ import (
 	"math"
 	"slices"
 	"sort"
+	"sync"
 
 	"github.com/jedib0t/go-pretty/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -113,16 +114,15 @@ func Run(data Dataset, conf *Config, alpha *Alphabet, verbose int, target_num_hi
 	for generation := 0; generation < conf.Generations; generation++ {
 
 		// Evaluate individuals
-		//var wg sync.WaitGroup
+		var wg sync.WaitGroup
 		for _, ind := range pop {
-			//wg.Add(1)
-			//go
-			func(individual *Individual) {
-				//defer wg.Done()
+			wg.Add(1)
+			go func(individual *Individual) {
+				defer wg.Done()
 				ind.Evaluate(data)
 			}(ind)
 		}
-		//wg.Wait()
+		wg.Wait()
 
 		// Speciation
 		// Species representatives
@@ -163,15 +163,14 @@ func Run(data Dataset, conf *Config, alpha *Alphabet, verbose int, target_num_hi
 		// Loss Evaluation
 		for _, members := range species {
 			for _, ind := range members {
-				//wg.Add(1)
-				//go
-				func(individual *Individual, rel_spec_size float64) {
-					//defer wg.Done()
+				wg.Add(1)
+				go func(individual *Individual, rel_spec_size float64) {
+					defer wg.Done()
 					EvaluateLoss(individual, data, conf, float64(generation)/float64(conf.Generations), rel_spec_size)
 				}(ind, float64(len(members))/float64(maxSpeciesSize))
 			}
 		}
-		//wg.Wait()
+		wg.Wait()
 
 		// Sort by best instantaneous loss
 		sort.Slice(pop, func(i, j int) bool {

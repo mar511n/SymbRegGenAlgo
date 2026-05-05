@@ -2,6 +2,7 @@ package symbolic
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -51,16 +52,49 @@ func (p Postfix) TokenDiff(other Postfix) (d float64) {
 	}
 
 	// calculate number of tokens present in smallP but not in largerP
-	tokenCount := make(map[Token]int)
+	unaryTokens := make(map[UnaryOp]int)
+	binaryTokens := make(map[BinaryOp]int)
+	variableTokens := make(map[string]int)
+	constantTokens := make([]float64, 0)
 	for _, token := range largerP {
-		tokenCount[token]++
+		switch token.Type {
+		case TokenTypeBinary:
+			binaryTokens[token.BinaryOp]++
+		case TokenTypeUnary:
+			unaryTokens[token.UnaryOp]++
+		case TokenTypeConstant:
+			constantTokens = append(constantTokens, token.Value)
+		case TokenTypeVariable:
+			variableTokens[token.Name]++
+		}
 	}
 	for _, token := range smallP {
-		if tokenCount[token] > 0 {
-			tokenCount[token]--
-		} else {
-			d += 1
+		switch token.Type {
+		case TokenTypeBinary:
+			binaryTokens[token.BinaryOp]--
+		case TokenTypeUnary:
+			unaryTokens[token.UnaryOp]--
+		case TokenTypeConstant:
+			min_d := 1.0
+			for _, v := range constantTokens {
+				dv := math.Min(math.Abs(v-token.Value), 1)
+				if !isNaNOrInf(dv) && dv < min_d {
+					min_d = dv
+				}
+			}
+			d += min_d
+		case TokenTypeVariable:
+			variableTokens[token.Name]--
 		}
+	}
+	for _, c := range unaryTokens {
+		d += math.Abs(float64(c))
+	}
+	for _, c := range binaryTokens {
+		d += math.Abs(float64(c))
+	}
+	for _, c := range variableTokens {
+		d += math.Abs(float64(c))
 	}
 	return
 }

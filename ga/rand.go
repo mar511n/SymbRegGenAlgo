@@ -17,6 +17,18 @@ func (lr *lockedRand) Float64() float64 {
 	return lr.r.Float64()
 }
 
+func (lr *lockedRand) Seed(seed int64) {
+	lr.mu.Lock()
+	defer lr.mu.Unlock()
+	lr.r.Seed(seed)
+}
+
+func (lr *lockedRand) NormFloat64() float64 {
+	lr.mu.Lock()
+	defer lr.mu.Unlock()
+	return lr.r.NormFloat64()
+}
+
 func (lr *lockedRand) Intn(n int) int {
 	lr.mu.Lock()
 	defer lr.mu.Unlock()
