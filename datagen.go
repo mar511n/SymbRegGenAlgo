@@ -146,3 +146,62 @@ func generateAllDatasets() {
 	}
 	fmt.Println("Dataset generation complete.")
 }
+
+func generateNoisyDataset(datasetFile string, vars []string, var_ranges [][2]float64, postfix symbolic.Postfix, numPoints int, noiseStdDev float64) error {
+	postfixStr := postfix.String()
+	tree, err := postfix.ToTree()
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(datasetFile)
+	if err != nil {
+		return err
+	}
+
+	writer := csv.NewWriter(f)
+
+	// Write header: first column is the expression string (resulting output), then the variables
+	header := []string{postfixStr}
+	header = append(header, vars...)
+	writer.Write(header)
+
+	validPoints := 0
+	attempts := 0
+	maxAttempts := numPoints * 10
+
+	for validPoints < numPoints && attempts < maxAttempts {
+		attempts++
+
+		inputs := make(map[string]float64)
+		noisyInputs := make(map[string]float64)
+		for vi, v := range vars {
+			val := (rand.Float64() * (var_ranges[vi][1] - var_ranges[vi][0])) + var_ranges[vi][0]
+			inputs[v] = val
+			noisyInputs[v] = addNoise(val, noiseStdDev)
+		}
+
+		// Evaluate using exact parameters
+		setVariables(tree.Root, inputs)
+		out := tree.Evaluate()
+
+		// If result is NaN or Inf, skip
+		if math.IsNaN(out) || math.IsInf(out, 0) {
+			continue
+		}
+
+		// Add measurement error to output
+		noisyOut := addNoise(out, noiseStdDev)
+
+		// Write row
+		row := []string{strconv.FormatFloat(noisyOut, 'f', -1, 64)}
+		for _, v := range vars {
+			row = append(row, strconv.FormatFloat(noisyInputs[v], 'f', -1, 64))
+		}
+		writer.Write(row)
+		validPoints++
+	}
+
+	writer.Flush()
+	f.Close()
+	return nil
+}

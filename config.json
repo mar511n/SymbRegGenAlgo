@@ -1,0 +1,11 @@
+{
+    "dataset_filepath": "data/datasets/test_dataset.csv",
+    "history_filepath": "data/results/evolution_history.json",
+    "plot_filepath": "data/results/predictions.svg",
+    "vars": ["x0"],
+    "var_ranges": [[-10, 10]],
+    "expr_str": "x0 2 ^ -3 / exp",
+    "num_datapoints": 100,
+    "noise_stddev": 0.01,
+    "num_history_dumps": 100
+}

@@ -20,7 +20,7 @@ This project implements a genetic algorithm in Go to perform symbolic regression
 
 1. **Run Evolution**:
 	```bash
-	go run main.go
+	go run main.go datagen.go
 	```
 2. **Analyze Results**:
 	Open `analysis.ipynb` in a Jupyter environment to load the generated JSON data and inspect fitness curves and evolved expressions.
