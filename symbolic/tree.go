@@ -130,7 +130,11 @@ func (t *Tree) Depth() int {
 }
 
 func (t *Tree) String() string {
-	return nodeToString(t.Root)
+	return nodeToString(t.Root, "%0.2e")
+}
+
+func (t *Tree) Stringfmt(floatFormat string) string {
+	return nodeToString(t.Root, floatFormat)
 }
 
 func (t *Tree) ToPostfix() Postfix {

@@ -73,16 +73,15 @@ func Run(data Dataset, conf *Config, alpha *Alphabet, verbose int, target_num_hi
 	// TODO: use higher depth and more individuals for initial guessing
 	if conf.MaxLossRaw < 0 {
 		fmt.Printf("Guessing max loss from initial population...\n")
-		//var wg sync.WaitGroup
+		var wg sync.WaitGroup
 		for _, ind := range pop {
-			//wg.Add(1)
-			//go
-			func(individual *Individual) {
-				//defer wg.Done()
+			wg.Add(1)
+			go func(individual *Individual) {
+				defer wg.Done()
 				EvaluateLossRaw(individual, data, conf)
 			}(ind)
 		}
-		//wg.Wait()
+		wg.Wait()
 		conf.MaxLossRaw = math.MaxFloat64
 		found := false
 		for _, ind := range pop {

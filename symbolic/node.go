@@ -79,7 +79,7 @@ func nodeDepth(n Node) int {
 	}
 }
 
-func nodeToString(n Node) string {
+func nodeToString(n Node, floatFormat string) string {
 	if n == nil {
 		return ""
 	}
@@ -87,11 +87,11 @@ func nodeToString(n Node) string {
 	case *InputNode:
 		return node.Name
 	case *ConstantNode:
-		return fmt.Sprintf("%0.2e", node.Value)
+		return fmt.Sprintf(floatFormat, node.Value)
 	case *UnaryNode:
-		return fmt.Sprintf("%s(%s)", node.Op.String(), nodeToString(node.Input))
+		return fmt.Sprintf("%s(%s)", node.Op.String(), nodeToString(node.Input, floatFormat))
 	case *BinaryNode:
-		return fmt.Sprintf("(%s %s %s)", nodeToString(node.Left), node.Op.String(), nodeToString(node.Right))
+		return fmt.Sprintf("(%s %s %s)", nodeToString(node.Left, floatFormat), node.Op.String(), nodeToString(node.Right, floatFormat))
 	}
 	return "unknown"
 }

@@ -78,30 +78,39 @@ func Mutate(ind *Individual, alpha *Alphabet, maxDepth int, params *GeneratorPar
 }
 
 func PointMutation(ind *Individual, alpha *Alphabet) {
-	idx := rnd.Intn(len(ind.Tree))
-	token := &ind.Tree[idx]
-	switch token.Type {
-	case symbolic.TokenTypeBinary:
-		// Randomly select a different binary operator
-		if len(alpha.BinaryOps) > 0 {
-			token.BinaryOp = alpha.BinaryOps[rnd.Intn(len(alpha.BinaryOps))]
-		}
-	case symbolic.TokenTypeUnary:
-		// Randomly select a different unary operator
-		if len(alpha.UnaryOps) > 0 {
-			token.UnaryOp = alpha.UnaryOps[rnd.Intn(len(alpha.UnaryOps))]
-		}
-	case symbolic.TokenTypeConstant:
-		// Shift the constant value by random amount
-		if rnd.Float64() < 0.5 {
-			token.Value = alpha.MinConst + rnd.NormFloat64()*(alpha.MaxConst-alpha.MinConst)/2/3 + (alpha.MaxConst+alpha.MinConst)/2
-		} else {
-			token.Value = alpha.MinConst + rnd.Float64()*(alpha.MaxConst-alpha.MinConst)
-		}
-	case symbolic.TokenTypeVariable:
-		// Randomly select a different variable
-		if len(alpha.Variables) > 0 {
-			token.Name = alpha.Variables[rnd.Intn(len(alpha.Variables))]
+	for ti := 0; ti < 10; ti++ {
+		idx := rnd.Intn(len(ind.Tree))
+		token := &ind.Tree[idx]
+		switch token.Type {
+		case symbolic.TokenTypeBinary:
+			// Randomly select a different binary operator
+			if len(alpha.BinaryOps) > 0 {
+				token.BinaryOp = alpha.BinaryOps[rnd.Intn(len(alpha.BinaryOps))]
+				return
+			}
+		case symbolic.TokenTypeUnary:
+			// Randomly select a different unary operator
+			if len(alpha.UnaryOps) > 0 {
+				token.UnaryOp = alpha.UnaryOps[rnd.Intn(len(alpha.UnaryOps))]
+				return
+			}
+		case symbolic.TokenTypeConstant:
+			// Change the constant value by random amount
+			p := rnd.Float64()
+			if p < 0.33 {
+				token.Value += rnd.NormFloat64() / 5 * (alpha.MaxConst - alpha.MinConst)
+			} else if p < 0.66 {
+				token.Value *= 1 + rnd.NormFloat64()*0.1
+			} else {
+				token.Value = alpha.MinConst + rnd.Float64()*(alpha.MaxConst-alpha.MinConst)
+			}
+			return
+		case symbolic.TokenTypeVariable:
+			// Randomly select a different variable
+			if len(alpha.Variables) > 1 {
+				token.Name = alpha.Variables[rnd.Intn(len(alpha.Variables))]
+				return
+			}
 		}
 	}
 }

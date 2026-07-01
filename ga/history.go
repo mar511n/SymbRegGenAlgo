@@ -62,7 +62,7 @@ func ExportHistoryToJSON(history *EvolutionHistory, filename string) error {
 	// Convert HallOfFame
 	for gen, ind := range history.HallOfFame {
 		if tree, err := ind.Tree.ToTree(); err == nil {
-			dto.HallOfFame[gen] = tree.String()
+			dto.HallOfFame[gen] = tree.Stringfmt("%v")
 		}
 	}
 
@@ -76,7 +76,7 @@ func ExportHistoryToJSON(history *EvolutionHistory, filename string) error {
 			dtoEntries = append(dtoEntries, SpeciesEntryDTO{
 				ID:             entry.ID,
 				Size:           entry.Size,
-				Representative: tree.String(), // Or entry.Representative.String() if implemented
+				Representative: tree.Stringfmt("%v"), // Or entry.Representative.String() if implemented
 				LossRaws:       entry.LossRaws,
 				Complexities:   entry.Complexities,
 				LossInsts:      entry.LossInsts,
